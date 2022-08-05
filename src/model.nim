@@ -168,7 +168,7 @@ proc loadTexture(texturePath: string): GLuint =
   glTexImage2D(
     GL_TEXTURE_2D,
     0,
-    GLint(GL_RGB),
+    GLint(format),
     int32(width),
     int32(height),
     0,
