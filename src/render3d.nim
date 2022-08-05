@@ -35,7 +35,7 @@ proc processInputs(window: GLFWWindow): void =
   if window.getKey(GLFWKey.Escape) == GLFWPress:
     window.setWindowShouldClose(true)
 
-  var cameraSpeed = 10.5f * deltaTime
+  var cameraSpeed = 5.0f * deltaTime
   if window.getKey(GLFWKey.W) == GLFW_Press:
     cameraPos += cameraSpeed * cameraFront
 
@@ -76,7 +76,7 @@ proc mouseCallback(window: GLFWWindow, xpos: float64, ypos: float64): void {.cde
     lastY = ypos
     firstMouse = false
 
-  let sensitivity = 0.1f
+  let sensitivity = 0.2f
   var
     xoffset = xpos - lastX
     yoffset = lastY - ypos
@@ -86,6 +86,9 @@ proc mouseCallback(window: GLFWWindow, xpos: float64, ypos: float64): void {.cde
 
   xoffset *= sensitivity
   yoffset *= sensitivity
+
+  if window.getMouseButton(GLFWMouseButton.Button1) != GLFW_Press:
+    return
 
   yaw += xoffset
   pitch += yoffset
@@ -118,11 +121,11 @@ when isMainModule:
   glfwWindowHint(GLFWOpenglProfile, GLFW_OPENGL_CORE_PROFILE)
   glfwWindowHint(GLFWResizable, GLFW_FALSE)
 
-  let w: GLFWWindow = glfwCreateWindow(ScreenWidth, ScreenHeight, "3D Renderer Test Thingy")
+  let w: GLFWWindow = glfwCreateWindow(ScreenWidth, ScreenHeight, "The 3D Model Loader From Hell!")
   if w == nil:
     quit(-1)
 
-  w.setInputMode(GLFWCursorSpecial, GLFW_CURSOR_DISABLED)
+  #w.setInputMode(GLFWCursorSpecial, GLFW_CURSOR_DISABLED)
   w.makeContextCurrent()
 
   discard w.setCursorPosCallback(mouseCallback)
