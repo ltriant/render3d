@@ -22,9 +22,9 @@ $ nimble run -- obj/teapot.obj
 
 | Key/Button | Action |
 | ---------- | ------ |
-| W | Move camera vertically upwards |
-| S | Move camera vertically downwards |
-| A | Move camera horizontally to the left |
-| D | Move camera horizontally to the right |
+| W | Move camera forwards |
+| S | Move camera backwards |
+| A | Strafe left |
+| D | Strafe right |
 | Space | Hold to toggle wireframe mode |
 | Mouse button 1 / Left click | Click and drag to point the camera in another direction |
