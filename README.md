@@ -23,7 +23,9 @@ $ nimble run -- obj/teapot.obj
 | Key/Button | Action |
 | ---------- | ------ |
 | W | Move camera forwards |
+| Shift + W | Move camera upwards |
 | S | Move camera backwards |
+| Shift + W | Move camer downards |
 | A | Strafe left |
 | D | Strafe right |
 | Space | Hold to toggle wireframe mode |

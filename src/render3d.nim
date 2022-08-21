@@ -37,13 +37,19 @@ proc processInputs(window: GLFWWindow): void =
 
   var cameraSpeed = 5.0f * deltaTime
   if window.getKey(GLFWKey.W) == GLFW_Press:
-    cameraPos += cameraSpeed * cameraFront
+    if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
+      cameraPos += cameraSpeed * cameraUp
+    else:
+      cameraPos += cameraSpeed * cameraFront
 
   if window.getKey(GLFWKey.A) == GLFW_Press:
     cameraPos -= normalize(cross(cameraFront, cameraUp)) * cameraSpeed
 
   if window.getKey(GLFWKey.S) == GLFW_Press:
-    cameraPos -= cameraSpeed * cameraFront
+    if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
+      cameraPos -= cameraSpeed * cameraUp
+    else:
+      cameraPos -= cameraSpeed * cameraFront
 
   if window.getKey(GLFWKey.D) == GLFW_Press:
     cameraPos += normalize(cross(cameraFront, cameraUp)) * cameraSpeed
