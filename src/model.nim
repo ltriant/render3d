@@ -40,7 +40,7 @@ type
     indices: seq[uint32]
     textures: seq[Texture]
 
-    vao, vbo, ebo: uint32
+    vao, vbo, ebo: GLuint
 
 proc delete(mesh: var Mesh) =
   glDeleteVertexArrays(1, mesh.vao.addr)
@@ -141,7 +141,7 @@ proc draw*(m: Model, s: Shader) =
   for msh in m.meshes:
     msh.draw(s)
 
-proc loadTexture(texturePath: string): GLuint =
+proc loadTexture*(texturePath: string): GLuint =
   var
     width, height, channels: int
     textureData: seq[uint8]
@@ -169,8 +169,8 @@ proc loadTexture(texturePath: string): GLuint =
     GL_TEXTURE_2D,
     0,
     GLint(format),
-    int32(width),
-    int32(height),
+    GLsizei(width),
+    GLsizei(height),
     0,
     format,
     GL_UNSIGNED_BYTE,
@@ -307,5 +307,7 @@ proc loadModel*(filePath: string): Model =
   )
 
   model.processNode(scene.rootNode, scene)
+
+  scene.aiReleaseImport()
 
   return model
