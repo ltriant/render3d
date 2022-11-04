@@ -2,6 +2,10 @@
 
 I'm learning how 3D graphics work, so this is my project for that.
 
+# IMPORTANT
+
+Whatever the documentation here says may not be accurate, as I'm still using this repo to learn OpenGL and may have completely gutted the code in order to learn... whatever it is I'm learning.
+
 ## Dependencies
 
 ```plaintext

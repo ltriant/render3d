@@ -114,10 +114,12 @@ proc mouseCallback(window: GLFWWindow, xpos: float64, ypos: float64): void {.cde
 
 
 when isMainModule:
+  #[
   let argv = os.commandLineParams()
   if len(argv) == 0:
     echo "usage: render3d <objfile>"
     quit 1
+  ]#
 
   assert glfwInit()
 
@@ -139,14 +141,157 @@ when isMainModule:
 
   assert glInit()
 
+  glEnable(GL_DEPTH_TEST)
+
+  #glEnable(GL_BLEND)
+  #glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+  #glBlendEquation(GL_ADD)
+
+  #let shaderProgram = newShader("shader.vs", "shader.fs")
+  #var myModel = loadModel(argv[0])
+
+  var
+    cubeVAO: GLuint
+    cubeVBO: GLuint
+    cubeVertices = [
+      # positions           texture coords
+      -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+       0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+       0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+       0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+      -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+      -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+      -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+       0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+       0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+       0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+      -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+      -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+      -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+      -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+      -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+      -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+      -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+      -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+       0.5f,  0.5f,  0.5f,   1.0f, 0.0f,
+       0.5f,  0.5f, -0.5f,   1.0f, 1.0f,
+       0.5f, -0.5f, -0.5f,   0.0f, 1.0f,
+       0.5f, -0.5f, -0.5f,   0.0f, 1.0f,
+       0.5f, -0.5f,  0.5f,   0.0f, 0.0f,
+       0.5f,  0.5f,  0.5f,   1.0f, 0.0f,
+
+      -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+       0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+       0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+       0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+      -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+      -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+      -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+       0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+       0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+       0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+      -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+      -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+    ]
+
+  glGenVertexArrays(1, cubeVAO.addr)
+  glGenBuffers(1, cubeVBO.addr)
+  glBindVertexArray(cubeVAO)
+  glBindBuffer(GL_ARRAY_BUFFER, cubeVBO)
+  glBufferData(GL_ARRAY_BUFFER, cfloat.sizeof * cubeVertices.len, cubeVertices[0].addr, GL_STATIC_DRAW)
+  glEnableVertexAttribArray(0)
+  glVertexAttribPointer(0, 3, EGL_FLOAT, false, 5 * cfloat.sizeof, cast[pointer](0))
+  glEnableVertexAttribArray(1)
+  glVertexAttribPointer(1, 2, EGL_FLOAT, false, 5 * cfloat.sizeof, cast[pointer](3 * cfloat.sizeof))
+  glBindVertexArray(0)
+
+  var
+    planeVAO: GLuint
+    planeVBO: GLuint
+    planeVertices = [
+       5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+      -5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+      -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+       5.0f, -0.5f,  5.0f,  2.0f, 0.0f,
+      -5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+       5.0f, -0.5f, -5.0f,  2.0f, 2.0f
+    ]
+
+  glGenVertexArrays(1, planeVAO.addr)
+  glGenBuffers(1, planeVBO.addr)
+  glBindVertexArray(planeVAO)
+  glBindBuffer(GL_ARRAY_BUFFER, planeVBO)
+  glBufferData(GL_ARRAY_BUFFER, cfloat.sizeof * planeVertices.len, planeVertices[0].addr, GL_STATIC_DRAW)
+  glEnableVertexAttribArray(0)
+  glVertexAttribPointer(0, 3, EGL_FLOAT, false, 5 * cfloat.sizeof, cast[pointer](0))
+  glEnableVertexAttribArray(1)
+  glVertexAttribPointer(1, 2, EGL_FLOAT, false, 5 * cfloat.sizeof, cast[pointer](3 * cfloat.sizeof))
+  glBindVertexArray(0)
+
   stbi.setFlipVerticallyOnLoad(true)
 
-  let shaderProgram = newShader("shader.vs", "shader.fs")
-  var myModel = loadModel(argv[0])
+  var
+    cubeTexture = loadTexture("container.jpg")
+    floorTexture = loadTexture("metal.png")
+    shaderProgram2 = newShader("shader2.vs", "shader2.fs")
 
-  #var myMesh = argv[0].fromObjFile
+  shaderProgram2.use
+  shaderProgram2.setInt("texture1", 0)
 
-  glEnable(GL_DEPTH_TEST)
+  var
+    quadVAO: GLuint
+    quadVBO: GLuint
+    quadShader = newShader("shader-quad.vs", "shader-quad.fs")
+    quadVertices = [
+        -1.0f,  1.0f,  0.0f, 1.0f,
+        -1.0f, -1.0f,  0.0f, 0.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+
+        -1.0f,  1.0f,  0.0f, 1.0f,
+         1.0f, -1.0f,  1.0f, 0.0f,
+         1.0f,  1.0f,  1.0f, 1.0f
+    ]
+
+  quadShader.use
+  quadShader.setInt("screenTexture", 0)
+  glGenVertexArrays(1, quadVAO.addr)
+  glGenBuffers(1, quadVBO.addr)
+  glBindVertexArray(quadVAO)
+  glBindBuffer(GL_ARRAY_BUFFER, quadVBO)
+  glBufferData(GL_ARRAY_BUFFER, cfloat.sizeof * quadVertices.len, quadVertices[0].addr, GL_STATIC_DRAW)
+  glEnableVertexAttribArray(0)
+  glVertexAttribPointer(0, 2, EGL_FLOAT, false, 4 * cfloat.sizeof, cast[pointer](0))
+  glEnableVertexAttribArray(1)
+  glVertexAttribPointer(1, 2, EGL_FLOAT, false, 4 * cfloat.sizeof, cast[pointer](2 * cfloat.sizeof))
+
+  var
+    framebuffer: GLuint
+    textureColorBuffer: GLuint
+    rbo: GLuint
+
+  glGenFramebuffers(1, framebuffer.addr)
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuffer)
+  
+  glGenTextures(1, textureColorBuffer.addr)
+  glBindTexture(GL_TEXTURE_2D, textureColorBuffer)
+  glTexImage2D(GL_TEXTURE_2D, 0, GLint(GL_RGB), ScreenWidth, ScreenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, nil)
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR))
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR))
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorBuffer, 0)
+
+  glGenRenderbuffers(1, rbo.addr)
+  glBindRenderbuffer(GL_RENDERBUFFER, rbo)
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, ScreenWidth, ScreenHeight)
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo)
+  if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+    echo "framebuffer is not complete"
+    quit 1
+  glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
   while not w.windowShouldClose:
     # Frame timing
@@ -155,55 +300,96 @@ when isMainModule:
     lastFrame = currentFrame
 
     # Poll for events
-    glfwPollEvents()
     processInputs(w)
 
     # Render
-    glClearColor(0.05f, 0.05f, 0.05f, 1.0f)
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer)
+    glEnable(GL_DEPTH_TEST)
+
+    glClearColor(0.20f, 0.28f, 0.35f, 1.0f)
     glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-
-    shaderProgram.use
-    shaderProgram.setVec3f("lightColor", vec3f(1.0, 1.0, 1.0))
-    shaderProgram.setVec3f("objectColor", vec3f(1.0, 1.0, 1.0))
-    shaderProgram.setVec3f("viewPos", cameraPos)
-    shaderProgram.setVec3f("lightDirection", vec3f(-0.2, -1.0, -0.3));  # directional light
-
-    shaderProgram.setVec3f("material.ambient", vec3f(1.0, 1.0, 1.0));
-    shaderProgram.setVec3f("material.diffuse", vec3f(1.0, 0.5, 0.9));
-    shaderProgram.setVec3f("material.specular", vec3f(0.0, 0.2, 0.8));
-    shaderProgram.setFloat("material.shininess", 16.0);
 
     # Transformation matrices
     var projection = perspective(
-      radians(fov),
+      fov.radians,
       ScreenWidth.float / ScreenHeight.float,
       0.1,
       100.0
     )
-    shaderProgram.setMat4x4f("projection", projection)
-
     var view = lookAt(
       cameraPos,
       cameraPos + cameraFront,
       cameraUp
     )
-    shaderProgram.setMat4x4f("view", view)
-
     var model = mat4f(1.0)
-      #.rotate(currentFrame * radians(-55.0f), vec3f(0.1, 1.0, 0.2))
-    shaderProgram.setMat4x4f("model", model)
-
     var normalMat = model.inverse.transpose.normalMatrix
-    shaderProgram.setMat3x3f("normalMatrix", normalMat)
 
+    #[
+    shaderProgram.use
+    shaderProgram.setVec3f("lightColor", vec3f(1.0, 1.0, 1.0))
+    shaderProgram.setVec3f("objectColor", vec3f(1.0, 1.0, 1.0))
+    shaderProgram.setVec3f("viewPos", cameraPos)
+    shaderProgram.setVec3f("lightDirection", vec3f(-0.2, -1.0, -0.3))  # directional light
+
+    shaderProgram.setVec3f("material.ambient", vec3f(1.0, 1.0, 1.0))
+    shaderProgram.setVec3f("material.diffuse", vec3f(0.7, 0.5, 0.5))
+    shaderProgram.setVec3f("material.specular", vec3f(0.5, 0.4, 0.3))
+    shaderProgram.setFloat("material.shininess", 2.0)
+    
+
+    shaderProgram.setMat4x4f("projection", projection)
+    shaderProgram.setMat4x4f("view", view)
+    shaderProgram.setMat3x3f("normalMatrix", normalMat)
+    ]#
+
+    shaderProgram2.use
+    shaderProgram2.setMat4x4f("view", view)
+    shaderProgram2.setMat4x4f("projection", projection)
+    glBindVertexArray(cubeVAO)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, cubeTexture);
+    model = mat4f(1.0).translate(vec3f(-1.0, 0.0, -1.0))
+    shaderProgram2.setMat4x4f("model", model)
+    glDrawArrays(GL_TRIANGLES, 0, 36)
+
+    model = mat4f(1.0).translate(vec3f(2.0, 0.0, 0.0))
+    shaderProgram2.setMat4x4f("model", model)
+    glDrawArrays(GL_TRIANGLES, 0, 36)
+
+    glBindVertexArray(planeVAO)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, floorTexture)
+    model = mat4f(1.0)
+    shaderProgram2.setMat4x4f("model", model)
+    glDrawArrays(GL_TRIANGLES, 0, 6)
+
+    glBindVertexArray(0)
+
+    #[
+    shaderProgram.use
+    model = mat4f(1.0)
+      #.rotate(currentFrame * radians(-55.0f), vec3f(0.0, 1.0, 0.0))
+    shaderProgram.setMat4x4f("model", model)
     myModel.draw(shaderProgram)
-    #myMesh.draw(shaderProgram)
+    ]#
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+    glDisable(GL_DEPTH_TEST)
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
+    glClear(GL_COLOR_BUFFER_BIT)
+
+    quadShader.use
+    glBindVertexArray(quadVAO)
+    glBindTexture(GL_TEXTURE_2D, textureColorBuffer)
+    glDrawArrays(GL_TRIANGLES, 0, 6)
 
     w.swapBuffers
+    glfwPollEvents()
 
   # Clean up
-  #myMesh.delete
-  shaderProgram.delete
+  #shaderProgram.delete
+  shaderProgram2.delete
+  #quadShader.delete
 
   w.destroyWindow
   glfwTerminate()
