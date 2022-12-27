@@ -180,6 +180,47 @@ proc loadTexture*(texturePath: string): GLuint =
 
   return texture
 
+proc loadCubemap*(faces: seq[string]): GLuint =
+  var
+    texture: GLuint
+    width, height, channels: int
+
+  glGenTextures(1, texture.addr)
+  glBindTexture(GL_TEXTURE_CUBE_MAP, texture)
+
+  for i in 0 .. high(faces):
+    var data = stbi.load(faces[i], width, height, channels, stbi.Default)
+
+    let format = case channels
+    of 1:
+      GL_RED
+    of 3:
+      GL_RGB
+    of 4:
+      GL_RGBA
+    else:
+      GL_RGB  # probably wrong
+
+    glTexImage2D(
+      GLenum(ord(GL_TEXTURE_CUBEMAP_POSITIVE_X) + i),
+      0,
+      GLint(format),
+      GLsizei(width),
+      GLsizei(height),
+      0,
+      format,
+      GL_UNSIGNED_BYTE,
+      pointer(data[0].addr)
+    )
+
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR))
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR))
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_EDGE))
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_EDGE))
+  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(GL_CLAMP_TO_EDGE))
+
+  return texture
+
 proc loadMaterialTextures(model: var Model, material: PMaterial, texType: TTextureType, typeName: string): seq[Texture] =
   echo fmt"before loadMaterialTextures: {$texType} (mem: {getOccupiedMem()})"
   var textures = newSeq[Texture]()
