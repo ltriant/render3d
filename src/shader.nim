@@ -13,8 +13,8 @@ proc checkShaderStatus(shader: uint32) =
   if status != GL_TRUE.ord:
     var
       log_length: int32
-      message = newSeq[char](1024)
-    glGetShaderInfoLog(shader, 1024, log_length.addr, message[0].addr)
+      message = newString(1024)
+    glGetShaderInfoLog(shader, 1024, log_length.addr, message.cstring)
     for c in message.filter(c => c != '0'):
       stdout.write(c)
 
@@ -39,7 +39,7 @@ proc newShader*(vertexShaderFile: string, fragmentShaderFile: string): Shader =
   # Verify the shader linked correctly
   var
     logLength: int32
-    message = newSeq[char](1024)
+    message = newString(1024)
     pLinked: int32
 
   glGetProgramiv(shaderProgram, GL_LINK_STATUS, pLinked.addr)
@@ -48,7 +48,7 @@ proc newShader*(vertexShaderFile: string, fragmentShaderFile: string): Shader =
       shaderProgram,
       1024,
       logLength.addr,
-      message[0].addr
+      message.cstring
     )
 
     for c in message.filter(c => c != '0'):
