@@ -2,6 +2,7 @@ import glm
 import nimgl/[glfw, opengl]
 import stb_image/read as stbi
 
+import camera
 import model
 import shader
 
@@ -12,10 +13,8 @@ import os
 const ScreenWidth  = 800
 const ScreenHeight = 600
 
-# Camera position
-var cameraPos   = vec3f(0.0, 0.0, 3.0)
-var cameraFront = vec3f(0.0, 0.0, -1.0)
-var cameraUp    = vec3f(0.0, 1.0, 0.0)
+# Camera
+var cam = createCamera()
 
 # Field of view
 var fov = 45.0f
@@ -43,24 +42,23 @@ proc processInputs(window: GLFWWindow): void =
   if window.getKey(GLFWKey.Escape) == GLFWPress:
     window.setWindowShouldClose(true)
 
-  var cameraSpeed = 5.0f * deltaTime
   if window.getKey(GLFWKey.W) == GLFW_Press:
     if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
-      cameraPos += cameraSpeed * cameraUp
+      cam.processInput(CameraMovement.camUp, deltaTime)
     else:
-      cameraPos += cameraSpeed * cameraFront
+      cam.processInput(CameraMovement.camForward, deltaTime)
 
   if window.getKey(GLFWKey.A) == GLFW_Press:
-    cameraPos -= normalize(cross(cameraFront, cameraUp)) * cameraSpeed
+    cam.processInput(CameraMovement.camLeft, deltaTime)
 
   if window.getKey(GLFWKey.S) == GLFW_Press:
     if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
-      cameraPos -= cameraSpeed * cameraUp
+      cam.processInput(CameraMovement.camDown, deltaTime)
     else:
-      cameraPos -= cameraSpeed * cameraFront
+      cam.processInput(CameraMovement.camBackward, deltaTime)
 
   if window.getKey(GLFWKey.D) == GLFW_Press:
-    cameraPos += normalize(cross(cameraFront, cameraUp)) * cameraSpeed
+    cam.processInput(CameraMovement.camRight, deltaTime)
 
   glPolygonMode(
     GL_FRONT_AND_BACK,
@@ -81,8 +79,6 @@ proc scrollCallback(window: GLFWWindow, xoffset: float64, yoffset: float64): voi
 var firstMouse = true
 var lastX = 400.0f
 var lastY = 300.0f
-var yaw = -90.0f
-var pitch = 0.0f
 
 proc mouseCallback(window: GLFWWindow, xpos: float64, ypos: float64): void {.cdecl.} =
   if firstMouse:
@@ -104,21 +100,7 @@ proc mouseCallback(window: GLFWWindow, xpos: float64, ypos: float64): void {.cde
   if window.getMouseButton(GLFWMouseButton.Button1) != GLFW_Press:
     return
 
-  yaw += xoffset
-  pitch += yoffset
-
-  if pitch > 89.0f:
-    pitch = 89.0f
-  elif pitch < -89.0f:
-    pitch = -89.0f
-
-  let direction = vec3f(
-    cos(radians(yaw)) * cos(radians(pitch)),
-    sin(radians(pitch)),
-    sin(radians(yaw)) * cos(radians(pitch))
-  )
-
-  cameraFront = normalize(direction)
+  cam.processMouseInput(xoffset, yoffset)
 
 
 when isMainModule:
@@ -130,7 +112,11 @@ when isMainModule:
   glfwWindowHint(GLFWOpenglProfile, GLFW_OPENGL_CORE_PROFILE)
   glfwWindowHint(GLFWResizable, GLFW_FALSE)
 
-  let w: GLFWWindow = glfwCreateWindow(ScreenWidth, ScreenHeight, "The 3D Model Loader From Hell!")
+  let w = glfwCreateWindow(
+    ScreenWidth,
+    ScreenHeight,
+    "The 3D Model Loader From Hell!"
+  )
   if w == nil:
     quit(-1)
 
@@ -304,16 +290,12 @@ when isMainModule:
       0.1,
       100.0
     )
-    var view = lookAt(
-      cameraPos,
-      cameraPos + cameraFront,
-      cameraUp
-    )
+    var view = cam.lookAtMatrix()
     var model = mat4f(1.0)
 
     # Draw cubes!
     shaderProgram2.use
-    shaderProgram2.setVec3f("cameraPos", cameraPos)
+    shaderProgram2.setVec3f("cameraPos", cam.pos)
     shaderProgram2.setMat4x4f("view", view)
     shaderProgram2.setMat4x4f("projection", projection)
     glBindVertexArray(cubeVAO)
