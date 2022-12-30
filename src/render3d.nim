@@ -43,19 +43,23 @@ proc processInputs(window: GLFWWindow): void =
     window.setWindowShouldClose(true)
 
   if window.getKey(GLFWKey.W) == GLFW_Press:
-    if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
-      cam.processInput(CameraMovement.camUp, deltaTime)
-    else:
-      cam.processInput(CameraMovement.camForward, deltaTime)
+    cam.processInput(
+      if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
+        CameraMovement.camUp
+      else:
+        CameraMovement.camForward,
+      deltaTime)
 
   if window.getKey(GLFWKey.A) == GLFW_Press:
     cam.processInput(CameraMovement.camLeft, deltaTime)
 
   if window.getKey(GLFWKey.S) == GLFW_Press:
-    if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
-      cam.processInput(CameraMovement.camDown, deltaTime)
-    else:
-      cam.processInput(CameraMovement.camBackward, deltaTime)
+    cam.processInput(
+      if window.getKey(GLFWKey.LeftShift) == GLFW_Press or window.getKey(GLFWKey.RightShift) == GLFW_Press:
+        CameraMovement.camDown
+      else:
+        CameraMovement.camBackward,
+      deltaTime)
 
   if window.getKey(GLFWKey.D) == GLFW_Press:
     cam.processInput(CameraMovement.camRight, deltaTime)
