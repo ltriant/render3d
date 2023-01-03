@@ -261,10 +261,7 @@ proc processMesh(model: var Model, mesh: PMesh, scene: PScene): Mesh =
   if mesh.hasPositions:
     echo fmt"  before vertex count: {mesh.vertexCount} (mem: {getOccupiedMem()})"
     for i in 0 ..< mesh.vertexCount:
-      # mesh.vertices is a `ptr TVector3d`, so it needs to be cast to an int, indexed by the size of
-      # `TVector3d`, and then cast back to a pointer.
-      # Ew. Vomit.
-      let vert = cast[ptr TVector3d](cast[int](mesh.vertices) + i * sizeof(TVector3d))
+      let vert = mesh.vertices[i]
       let pos = vec3f(vert.x.float32, vert.y.float32, vert.z.float32)
 
       var v = Vertex(
@@ -274,10 +271,13 @@ proc processMesh(model: var Model, mesh: PMesh, scene: PScene): Mesh =
       if mesh.normals == nil:
         v.normal = pos.normalize
       else:
-        let norm = cast[ptr TVector3d](cast[int](mesh.normals) + i * sizeof(TVector3d))
+        let norm = mesh.normals[i]
         v.normal = vec3f(norm.x.float32, norm.y.float32, norm.z.float32)
 
       if mesh.texCoords[0] != nil:
+        # mesh.texCoords[0] is a `ptr TVector3d`, so it needs to be cast to an int, indexed by the
+        # size of `TVector3d`, and then cast back to a pointer.
+        # Ew. Vomit.
         let texc = cast[ptr TVector3d](cast[int](mesh.texCoords[0]) + i * sizeof(TVector3d))
         v.texCoords = vec2f(texc.x.float32, texc.y.float32)
 
