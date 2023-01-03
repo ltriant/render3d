@@ -17,13 +17,13 @@ type
     ## as a sequence of these will be used directly for OpenGL's vertex array object
 
     # The position of the vertex
-    position*: Vec3f
+    position: Vec3f
 
     # The normalized normal vector of the position
-    normal*: Vec3f
+    normal: Vec3f
 
     # The texture coordinates for the vertex
-    texCoords*: Vec2f
+    texCoords: Vec2f
 
   Texture = object
     # The id of the texture, as used by OpenGL
@@ -136,6 +136,11 @@ type
     meshes: seq[Mesh]
 
     texturesLoaded: seq[Texture]
+
+proc delete*(m: Model) =
+  for i in 0 .. m.meshes.high:
+    var msh = m.meshes[i]
+    msh.delete
 
 proc draw*(m: Model, s: Shader) =
   for msh in m.meshes:

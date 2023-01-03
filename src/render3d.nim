@@ -132,6 +132,8 @@ when isMainModule:
 
   assert glInit()
 
+  #var myModel = loadModel("obj/spyro/VGQ6L8BATTZ8Q4OFEHZOIS0VN.obj")
+
   glEnable(GL_DEPTH_TEST)
 
   var
@@ -316,6 +318,10 @@ when isMainModule:
     shaderProgram2.setMat4x4f("model", model)
     glDrawArrays(GL_TRIANGLES, 0, 36)
 
+    #model = mat4f(1.0)
+    #shaderProgram2.setMat4x4f("model", model)
+    #myModel.draw(shaderProgram2)
+
     # Draw the skybox
     glDepthFunc(GL_LEQUAL)
     var skyboxView = view.intoNormalMatrix.intoMat4x4
@@ -334,8 +340,9 @@ when isMainModule:
     glfwPollEvents()
 
   # Clean up
-  shaderProgram2.delete
-  skyboxShader.delete
+  delete shaderProgram2
+  delete skyboxShader
+  #delete myModel
 
   w.destroyWindow
   glfwTerminate()
