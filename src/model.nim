@@ -43,19 +43,19 @@ type
     vao, vbo, ebo: GLuint
 
 proc delete(mesh: var Mesh) =
-  glDeleteVertexArrays(1, mesh.vao.addr)
-  glDeleteBuffers(1, mesh.vbo.addr)
-  glDeleteBuffers(1, mesh.ebo.addr)
+  glDeleteVertexArrays 1, mesh.vao.addr
+  glDeleteBuffers 1, mesh.vbo.addr
+  glDeleteBuffers 1, mesh.ebo.addr
 
 proc setup(mesh: var Mesh) =
-  glGenVertexArrays(1, mesh.vao.addr)
-  glGenBuffers(1, mesh.vbo.addr)
-  glGenBuffers(1, mesh.ebo.addr)
+  glGenVertexArrays 1, mesh.vao.addr
+  glGenBuffers 1, mesh.vbo.addr
+  glGenBuffers 1, mesh.ebo.addr
 
   # Vertex array object for the object
-  glBindVertexArray(mesh.vao)
+  glBindVertexArray mesh.vao
 
-  glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo)
+  glBindBuffer GL_ARRAY_BUFFER, mesh.vbo
   glBufferData(
     GL_ARRAY_BUFFER,
     cint(cfloat.sizeof * mesh.vertices.len * sizeof(Vertex)),
@@ -63,7 +63,7 @@ proc setup(mesh: var Mesh) =
     GL_STATIC_DRAW
   )
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo)
+  glBindBuffer GL_ELEMENT_ARRAY_BUFFER, mesh.ebo
   glBufferData(
     GL_ELEMENT_ARRAY_BUFFER,
     cint(cuint.sizeof * mesh.indices.len),
@@ -80,7 +80,7 @@ proc setup(mesh: var Mesh) =
     cfloat.sizeof * 8,
     cast[pointer](Vertex.offsetOf(position))
   )
-  glEnableVertexAttribArray(0)
+  glEnableVertexAttribArray 0
 
   # normals
   glVertexAttribPointer(
@@ -91,7 +91,7 @@ proc setup(mesh: var Mesh) =
     cfloat.sizeof * 8,
     cast[pointer](Vertex.offsetOf(normal))
   )
-  glEnableVertexAttribArray(1)
+  glEnableVertexAttribArray 1
 
   # texture coordinates
   glVertexAttribPointer(
@@ -102,7 +102,7 @@ proc setup(mesh: var Mesh) =
     cfloat.sizeof * 8,
     cast[pointer](Vertex.offsetOf(texCoords))
   )
-  glEnableVertexAttribArray(2)
+  glEnableVertexAttribArray 2
 
 proc draw(mesh: Mesh, shaderProgram: Shader) =
   var
@@ -113,7 +113,7 @@ proc draw(mesh: Mesh, shaderProgram: Shader) =
     var number = 0
     let name = mesh.textures[i].kind
 
-    glActiveTexture(GLenum(ord(GL_TEXTURE0) + i))
+    glActiveTexture GLenum(ord(GL_TEXTURE0) + i)
 
     if name == "texture_diffuse":
       number = diffuseN
@@ -123,12 +123,12 @@ proc draw(mesh: Mesh, shaderProgram: Shader) =
       number = specularN
       specularN += 1
 
-    shaderProgram.setInt("material." & name & $number, i)
-    glBindTexture(GL_TEXTURE_2D, mesh.textures[i].id)
+    shaderProgram.setInt "material." & name & $number, i
+    glBindTexture GL_TEXTURE_2D, mesh.textures[i].id
 
-  glBindVertexArray(mesh.vao)
-  glDrawElements(GL_TRIANGLES, mesh.indices.len.cint, GL_UNSIGNED_INT, nil)
-  glBindVertexArray(0)
+  glBindVertexArray mesh.vao
+  glDrawElements GL_TRIANGLES, mesh.indices.len.cint, GL_UNSIGNED_INT, nil
+  glBindVertexArray 0
 
 type
   Model = object
@@ -144,7 +144,7 @@ proc delete*(m: Model) =
 
 proc draw*(m: Model, s: Shader) =
   for msh in m.meshes:
-    msh.draw(s)
+    msh.draw s
 
 proc loadTexture*(texturePath: string): GLuint =
   var
@@ -164,12 +164,12 @@ proc loadTexture*(texturePath: string): GLuint =
     else:
       GL_RGB  # probably wrong
 
-  glGenTextures(1, texture.addr)
-  glBindTexture(GL_TEXTURE_2D, texture)
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GLint(GL_REPEAT))
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_REPEAT))
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR_MIPMAP_LINEAR))
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR))
+  glGenTextures 1, texture.addr
+  glBindTexture GL_TEXTURE_2D, texture
+  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GLint(GL_REPEAT)
+  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_REPEAT)
+  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR_MIPMAP_LINEAR)
+  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR)
   glTexImage2D(
     GL_TEXTURE_2D,
     0,
@@ -181,7 +181,7 @@ proc loadTexture*(texturePath: string): GLuint =
     GL_UNSIGNED_BYTE,
     pointer(textureData[0].addr)
   )
-  glGenerateMipmap(GL_TEXTURE_2D)
+  glGenerateMipmap GL_TEXTURE_2D
 
   return texture
 
@@ -190,8 +190,8 @@ proc loadCubemap*(faces: seq[string]): GLuint =
     texture: GLuint
     width, height, channels: int
 
-  glGenTextures(1, texture.addr)
-  glBindTexture(GL_TEXTURE_CUBE_MAP, texture)
+  glGenTextures 1, texture.addr
+  glBindTexture GL_TEXTURE_CUBE_MAP, texture
 
   for i in 0 .. high(faces):
     var data = stbi.load(faces[i], width, height, channels, stbi.Default)
@@ -218,11 +218,11 @@ proc loadCubemap*(faces: seq[string]): GLuint =
       pointer(data[0].addr)
     )
 
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR))
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR))
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_EDGE))
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_EDGE))
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(GL_CLAMP_TO_EDGE))
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GLint(GL_LINEAR)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GLint(GL_LINEAR)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_EDGE)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_EDGE)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(GL_CLAMP_TO_EDGE)
 
   return texture
 
@@ -242,7 +242,7 @@ proc loadMaterialTextures(model: var Model, material: PMaterial, texType: TTextu
     let alreadyLoadedTextures = model.texturesLoaded.filter t => t.path == fullTexturePath
 
     if len(alreadyLoadedTextures) > 0:
-      textures.add(alreadyLoadedTextures[0])
+      textures.add alreadyLoadedTextures[0]
     else:
       echo "    loading texture: ", fullTexturePath
       let newTexture = Texture(
@@ -250,8 +250,8 @@ proc loadMaterialTextures(model: var Model, material: PMaterial, texType: TTextu
         kind: typeName,
         path: fullTexturePath
       )
-      textures.add(newTexture)
-      model.texturesLoaded.add(newTexture)
+      textures.add newTexture
+      model.texturesLoaded.add newTexture
 
   echo fmt"after loadMaterialTextures (mem: {getOccupiedMem()})"
   return textures
@@ -286,7 +286,7 @@ proc processMesh(model: var Model, mesh: PMesh, scene: PScene): Mesh =
         let texc = cast[ptr TVector3d](cast[int](mesh.texCoords[0]) + i * sizeof(TVector3d))
         v.texCoords = vec2f(texc.x.float32, texc.y.float32)
 
-      vertices.add(v)
+      vertices.add v
     echo fmt"  after vertex count (mem: {getOccupiedMem()})"
 
   # process indices
@@ -323,17 +323,17 @@ proc processMesh(model: var Model, mesh: PMesh, scene: PScene): Mesh =
     textures: textures
   )
 
-  mesh.setup()
+  mesh.setup
 
   return mesh
 
 proc processNode(model: var Model, node: PNode, scene: PScene) =
   for i in 0 ..< node.meshCount:
     let mesh = model.processMesh(scene.meshes[node.meshes[i]], scene)
-    model.meshes.add(mesh)
+    model.meshes.add mesh
 
   for i in 0 ..< node.childrenCount:
-    model.processNode(node.children[i], scene)
+    model.processNode node.children[i], scene
 
 proc loadModel*(filePath: string): Model =
   echo fmt"loadModel (max mem: {getMaxMem()}, free mem: {getFreeMem()})"
@@ -352,8 +352,8 @@ proc loadModel*(filePath: string): Model =
     texturesLoaded: newSeq[Texture](),
   )
 
-  model.processNode(scene.rootNode, scene)
+  model.processNode scene.rootNode, scene
 
-  scene.aiReleaseImport()
+  scene.aiReleaseImport
 
   return model
