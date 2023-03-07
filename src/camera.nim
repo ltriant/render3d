@@ -10,7 +10,7 @@ type
     camRight
 
   Camera* = object
-    pos*: Vec3f
+    pos: Vec3f
     front: Vec3f
     up: Vec3f
 
@@ -26,6 +26,9 @@ proc createCamera*(): Camera =
     yaw: -90.0f,
     pitch: 0.0f
   )
+
+func position*(c: Camera): Vec3f =
+  c.pos
 
 func lookAtMatrix*(c: Camera): Mat4[float32] =
   lookAt(
