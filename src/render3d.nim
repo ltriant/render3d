@@ -229,7 +229,6 @@ when isMainModule:
     # Load shaders
     myShader = newShader("shader-advanced.vs", "shader-advanced.fs")
     simpleDepthShader = newShader("shader-shadowMapping.vs", "shader-shadowMapping.fs")
-    debugDepthQuad = newShader("shader-debugQuad.vs", "shader-debugQuad.fs")
 
     # Load textures
     woodTexture = loadTexture("wood.png")
@@ -279,8 +278,10 @@ when isMainModule:
   glTexImage2D GL_TEXTURE_2D, 0, GLint(GL_DEPTH_COMPONENT), ShadowWidth, ShadowHeight, 0, GL_DEPTH_COMPONENT, EGL_FLOAT, nil
   glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_NEAREST)
   glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_NEAREST)
-  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GLint(GL_REPEAT)
-  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_REPEAT)
+  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_BORDER)
+  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_BORDER)
+  var borderColor = [1.0f, 1.0f, 1.0f, 1.0f]
+  glTexParameterfv GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor[0].addr
 
   glBindFramebuffer GL_FRAMEBUFFER, depthMapFBO
   glFramebufferTexture2D GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0
@@ -295,9 +296,6 @@ when isMainModule:
   myShader.use
   myShader.setInt "diffuseTexture", 0
   myShader.setInt "shadowMap", 1
-
-  debugDepthQuad.use
-  debugDepthQuad.setInt "depthMap", 0
 
 
   #
@@ -390,16 +388,6 @@ when isMainModule:
     glActiveTexture GL_TEXTURE1
     glBindTexture GL_TEXTURE_2D, depthMap
     renderScene myShader
-
-    #
-    # 3. Render debugging quad
-    #
-    #[debugDepthQuad.use
-    debugDepthQuad.setFloat "near_plane", nearPlane
-    debugDepthQuad.setFloat "far_plane", farPlane
-    glActiveTexture GL_TEXTURE0;
-    glBindTexture GL_TEXTURE_2D, depthMap
-    #renderQuad debugDepthQuad]#
 
     w.swapBuffers
     glfwPollEvents()
