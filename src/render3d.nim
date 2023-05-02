@@ -199,6 +199,35 @@ proc renderScene(shader: Shader) =
   renderCube()
 
 
+var
+  quadVAO: GLuint = 0
+  quadVBO: GLuint
+
+proc renderQuad() =
+  if quadVAO == 0:
+    var quadVertices = [
+       # positions        texture Coords
+      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+       1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+       1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+    ]
+
+    glGenVertexArrays 1, quadVAO.addr
+    glGenBuffers 1, quadVBO.addr
+    glBindVertexArray quadVAO
+    glBindBuffer GL_ARRAY_BUFFER, quadVBO
+    glBufferData GL_ARRAY_BUFFER, quadVertices.len * sizeof(cfloat), quadVertices[0].addr, GL_STATIC_DRAW
+    glEnableVertexAttribArray 0
+    glVertexAttribPointer 0, 3, EGL_FLOAT, false, 5 * sizeof(cfloat), cast[pointer](0)
+    glEnableVertexAttribArray 1
+    glVertexAttribPointer 1, 2, EGL_FLOAT, false, 5 * sizeof(cfloat), cast[pointer](3 * sizeof(cfloat))
+  
+  glBindVertexArray quadVAO
+  glDrawArrays GL_TRIANGLE_STRIP, 0, 4
+  glBindVertexArray 0
+
+
 when isMainModule:
   assert glfwInit()
 
@@ -229,6 +258,7 @@ when isMainModule:
     # Load shaders
     myShader = newShader("shader-advanced.vs", "shader-advanced.fs")
     simpleDepthShader = newShader("shader-shadowMapping.vs", "shader-shadowMapping.fs")
+    debugDepthQuad = newShader("shader-debugQuad.vs", "shader-debugQuad.fs")
 
     # Load textures
     woodTexture = loadTexture("wood.png")
@@ -296,6 +326,9 @@ when isMainModule:
   myShader.use
   myShader.setInt "diffuseTexture", 0
   myShader.setInt "shadowMap", 1
+
+  debugDepthQuad.use
+  debugDepthQuad.setInt "depthMap", 0
 
 
   #
@@ -388,6 +421,14 @@ when isMainModule:
     glActiveTexture GL_TEXTURE1
     glBindTexture GL_TEXTURE_2D, depthMap
     renderScene myShader
+
+    # Render depth map to quad for visual debugging
+    debugDepthQuad.use
+    debugDepthQuad.setFloat "near_plane", nearPlane
+    debugDepthQuad.setFloat "far_plane", farPlane
+    glActiveTexture GL_TEXTURE0
+    glBindTexture GL_TEXTURE_2D, depthMap
+    #renderQuad()
 
     w.swapBuffers
     glfwPollEvents()
