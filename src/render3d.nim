@@ -6,6 +6,8 @@ import model
 import shader
 
 import math
+import options
+import sugar
 
 const
   ScreenWidth  = 800
@@ -23,6 +25,9 @@ var cam = createCamera()
 var deltaTime = 0.0f  # Time between current frame and last frame
 var lastFrame = 0.0f  # Time of last frame
 
+
+var shadows = true
+var shadowsKeyPressed = false
 
 proc processInputs(window: GLFWWindow): void =
   if window.getKey(GLFWKey.Escape) == GLFWPress:
@@ -50,13 +55,11 @@ proc processInputs(window: GLFWWindow): void =
   if window.getKey(GLFWKey.D) == GLFW_Press:
     cam.processInput CameraMovement.camRight, deltaTime
 
-  glPolygonMode(
-    GL_FRONT_AND_BACK,
-    if window.getKey(GLFWKey.Space) == GLFW_Press:
-      GL_LINE
-    else:
-      GL_FILL
-  )
+  if window.getKey(GLFWKey.Space) == GLFW_Press and not shadowsKeyPressed:
+    shadows = not shadows
+    shadowsKeyPressed = true
+  if window.getKey(GLFWKey.Space) == GLFW_Release:
+    shadowsKeyPressed = false
 
 
 # Field of view
@@ -151,9 +154,11 @@ proc renderCube() =
 
     glGenVertexArrays 1, cubeVAO.addr
     glGenBuffers 1, cubeVBO.addr
-    glBindVertexArray cubeVAO
+
     glBindBuffer GL_ARRAY_BUFFER, cubeVBO
     glBufferData GL_ARRAY_BUFFER, sizeof(cfloat) * len(cubeVertices), cubeVertices[0].addr, GL_STATIC_DRAW
+    
+    glBindVertexArray cubeVAO
     glEnableVertexAttribArray 0
     glVertexAttribPointer 0, 3, EGL_FLOAT, false, 8 * sizeof(cfloat), cast[pointer](0)
     glEnableVertexAttribArray 1
@@ -167,65 +172,48 @@ proc renderCube() =
   glDrawArrays GL_TRIANGLES, 0, 36
   glBindVertexArray 0
 
-
-var planeVAO: GLuint
-
 proc renderScene(shader: Shader) =
-  # Floor
+  # Room cube
   var model = mat4f(1.0)
-    .translate(vec3f(0.0, -0.1, 0.0))
+    .scale(vec3f(5.0))
   shader.setMat4x4f "model", model
-  glBindVertexArray planeVAO
-  glDrawArrays GL_TRIANGLES, 0, 6
+  glDisable GL_CULL_FACE
+  shader.setInt "reverse_normals", 1
+  renderCube()
+  shader.setInt "reverse_normals", 0
+  glEnable GL_CULL_FACE
 
   # Cubes
   model = mat4f(1.0)
-    .translate(vec3f(0.0, 1.5, 0.0))
+    .translate(vec3f(4.0, -3.5, 0.0))
     .scale(vec3f(0.5))
   shader.setMat4x4f "model", model
   renderCube()
 
   model = mat4f(1.0)
-    .translate(vec3f(2.0, 0.0, 1.0))
+    .translate(vec3f(2.0, 3.0, 1.0))
+    .scale(vec3f(0.75))
+  shader.setMat4x4f "model", model
+  renderCube()
+
+  model = mat4f(1.0)
+    .translate(vec3f(-3.0, -1.0, 0.0))
     .scale(vec3f(0.5))
   shader.setMat4x4f "model", model
   renderCube()
 
   model = mat4f(1.0)
-    .translate(vec3f(-1.0, 0.0, 2.0))
+    .translate(vec3f(-1.5, 1.0, 1.5))
+    .scale(vec3f(0.5))
+  shader.setMat4x4f "model", model
+  renderCube()
+
+  model = mat4f(1.0)
+    .translate(vec3f(-1.5, 2.0, -3.0))
     .rotate(radians(60.0f), normalize(vec3f(1.0, 0.0, 1.0)))
-    .scale(vec3f(0.25))
+    .scale(vec3f(0.75))
   shader.setMat4x4f "model", model
   renderCube()
-
-
-var
-  quadVAO: GLuint = 0
-  quadVBO: GLuint
-
-proc renderQuad() =
-  if quadVAO == 0:
-    var quadVertices = [
-       # positions        texture Coords
-      -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
-      -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-       1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-       1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-    ]
-
-    glGenVertexArrays 1, quadVAO.addr
-    glGenBuffers 1, quadVBO.addr
-    glBindVertexArray quadVAO
-    glBindBuffer GL_ARRAY_BUFFER, quadVBO
-    glBufferData GL_ARRAY_BUFFER, quadVertices.len * sizeof(cfloat), quadVertices[0].addr, GL_STATIC_DRAW
-    glEnableVertexAttribArray 0
-    glVertexAttribPointer 0, 3, EGL_FLOAT, false, 5 * sizeof(cfloat), cast[pointer](0)
-    glEnableVertexAttribArray 1
-    glVertexAttribPointer 1, 2, EGL_FLOAT, false, 5 * sizeof(cfloat), cast[pointer](3 * sizeof(cfloat))
-  
-  glBindVertexArray quadVAO
-  glDrawArrays GL_TRIANGLE_STRIP, 0, 4
-  glBindVertexArray 0
 
 
 when isMainModule:
@@ -256,43 +244,18 @@ when isMainModule:
 
   var
     # Load shaders
-    myShader = newShader("shader-advanced.vs", "shader-advanced.fs")
-    simpleDepthShader = newShader("shader-shadowMapping.vs", "shader-shadowMapping.fs")
-    debugDepthQuad = newShader("shader-debugQuad.vs", "shader-debugQuad.fs")
+    myShader = newShader(
+      "shader-pointShadows.vs",
+      "shader-pointShadows.fs"
+    )
+    simpleDepthShader = newShader(
+      "shader-pointShadowsDepth.vs",
+      "shader-pointShadowsDepth.fs",
+      some("shader-pointShadowsDepth.gs")
+    )
 
     # Load textures
     woodTexture = loadTexture("wood.png")
-
-
-  #
-  # Setup the plane/floor
-  #
-  var
-    #planeVAO: GLuint
-    planeVBO: GLuint
-    planeVertices = [
-      # positions             # normals          # texcoords
-       25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-      -25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,   0.0f,  0.0f,
-      -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-
-       25.0f, -0.5f,  25.0f,  0.0f, 1.0f, 0.0f,  25.0f,  0.0f,
-      -25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,   0.0f, 25.0f,
-       25.0f, -0.5f, -25.0f,  0.0f, 1.0f, 0.0f,  25.0f, 25.0f
-    ]
-
-  glGenVertexArrays 1, planeVAO.addr
-  glGenBuffers 1, planeVBO.addr
-  glBindVertexArray planeVAO
-  glBindBuffer GL_ARRAY_BUFFER, planeVBO
-  glBufferData GL_ARRAY_BUFFER, sizeof(cfloat) * planeVertices.len, planeVertices[0].addr, GL_STATIC_DRAW
-  glEnableVertexAttribArray 0
-  glVertexAttribPointer 0, 3, EGL_FLOAT, false, 8 * sizeof(cfloat), cast[pointer](0)
-  glEnableVertexAttribArray 1
-  glVertexAttribPointer 1, 3, EGL_FLOAT, false, 8 * sizeof(cfloat), cast[pointer](3 * sizeof(cfloat))
-  glEnableVertexAttribArray 2
-  glVertexAttribPointer 2, 2, EGL_FLOAT, false, 8 * sizeof(cfloat), cast[pointer](6 * sizeof(cfloat))
-  glBindVertexArray 0
 
 
   #
@@ -300,21 +263,31 @@ when isMainModule:
   #
   var
     depthMapFBO: GLuint
-    depthMap: GLuint
+    depthCubemap: GLuint
 
   glGenFramebuffers 1, depthMapFBO.addr
-  glGenTextures 1, depthMap.addr
-  glBindTexture GL_TEXTURE_2D, depthMap
-  glTexImage2D GL_TEXTURE_2D, 0, GLint(GL_DEPTH_COMPONENT), ShadowWidth, ShadowHeight, 0, GL_DEPTH_COMPONENT, EGL_FLOAT, nil
-  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GLint(GL_NEAREST)
-  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GLint(GL_NEAREST)
-  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_BORDER)
-  glTexParameteri GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_BORDER)
-  var borderColor = [1.0f, 1.0f, 1.0f, 1.0f]
-  glTexParameterfv GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor[0].addr
+  glGenTextures 1, depthCubemap.addr
+  glBindTexture GL_TEXTURE_CUBE_MAP, depthCubemap
+  for i in 0 ..< 6:
+    glTexImage2D(
+      GLenum(GL_TEXTURE_CUBE_MAP_POSITIVE_X.ord + i),
+      0,
+      GLint(GL_DEPTH_COMPONENT),
+      ShadowWidth,
+      ShadowHeight,
+      0,
+      GL_DEPTH_COMPONENT,
+      EGL_FLOAT,
+      nil
+    )
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GLint(GL_NEAREST)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GLint(GL_NEAREST)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GLint(GL_CLAMP_TO_EDGE)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GLint(GL_CLAMP_TO_EDGE)
+  glTexParameteri GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GLint(GL_CLAMP_TO_EDGE)
 
   glBindFramebuffer GL_FRAMEBUFFER, depthMapFBO
-  glFramebufferTexture2D GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0
+  glFramebufferTexture GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0
   glDrawBuffer GL_NONE
   glReadBuffer GL_NONE
   glBindFramebuffer GL_FRAMEBUFFER, 0
@@ -325,16 +298,13 @@ when isMainModule:
   #
   myShader.use
   myShader.setInt "diffuseTexture", 0
-  myShader.setInt "shadowMap", 1
-
-  debugDepthQuad.use
-  debugDepthQuad.setInt "depthMap", 0
+  myShader.setInt "depthMap", 1
 
 
   #
   # Light info
   #
-  var lightPos = vec3f(-2.0, 4.0, -1.0)
+  var lightPos = vec3f(0.0, 0.0, 0.0)
 
   while not w.windowShouldClose:
     # Frame timing
@@ -345,41 +315,44 @@ when isMainModule:
     # Poll for events
     processInputs w
 
+    # Move light over time
+    lightPos.z = sin(glfwGetTime() * 0.5) * 3.0
+
     # Render
     glClearColor 0.1f, 0.1f, 0.1f, 1.0f
     glClear GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT
 
     let
+      aspect = ShadowWidth.float32 / ShadowHeight.float32
       nearPlane = 1.0f
-      farPlane = 7.5f
+      farPlane = 25.0f
 
     var
-      lightProjection = ortho(
-        -10.0f,
-        10.0f,
-        -10.0f,
-        10.0f,
-        nearPlane,
-        farPlane
-      )
-      lightView = lookAt(
-        lightPos,
-        vec3f(0.0),
-        vec3f(0.0, 1.0, 0.0)
-      )
-      lightSpaceMatrix = lightProjection * lightView
-
-    simpleDepthShader.use
-    simpleDepthShader.setMat4x4f "lightSpaceMatrix", lightSpaceMatrix
+      shadowProjection = perspective(radians(90.0f), aspect, nearPlane, farPlane)
+      transforms = [
+        (vec3f( 1.0,  0.0,  0.0), vec3f(0.0, -1.0,  0.0)),
+        (vec3f(-1.0,  0.0,  0.0), vec3f(0.0, -1.0,  0.0)),
+        (vec3f( 0.0,  1.0,  0.0), vec3f(0.0,  0.0,  1.0)),
+        (vec3f( 0.0, -1.0,  0.0), vec3f(0.0,  0.0, -1.0)),
+        (vec3f( 0.0,  0.0,  1.0), vec3f(0.0, -1.0,  0.0)),
+        (vec3f( 0.0,  0.0, -1.0), vec3f(0.0, -1.0,  0.0)),
+      ]
+      shadowTransforms = collect(newSeq):
+        for vs in transforms:
+          shadowProjection * lookAt(lightPos, lightPos + vs[0], vs[1])
 
     #
-    # 1. Render the depth map
+    # 1. Render the depth cubemap
     #
     glViewport 0, 0, ShadowWidth, ShadowHeight
     glBindFramebuffer GL_FRAMEBUFFER, depthMapFBO
     glClear GL_DEPTH_BUFFER_BIT
-    glActiveTexture GL_TEXTURE0
-    glBindTexture GL_TEXTURE_2D, woodTexture
+    simpleDepthShader.use
+    for i in 0 ..< 6:
+      var t = shadowTransforms[i]
+      simpleDepthShader.setMat4x4f "shadowMatrices[" & $i & "]", t
+    simpleDepthShader.setFloat "far_plane", farPlane
+    simpleDepthShader.setVec3f "lightPos", lightPos
     renderScene simpleDepthShader
     glBindFramebuffer GL_FRAMEBUFFER, 0
 
@@ -411,24 +384,17 @@ when isMainModule:
     myShader.setMat4x4f "view", view
 
     # Set light uniforms
-    myShader.setVec3f "viewPos", cam.position
     myShader.setVec3f "lightPos", lightPos
-    myShader.setMat4x4f "lightSpaceMatrix", lightSpaceMatrix
+    myShader.setVec3f "viewPos", cam.position
+    myShader.setInt "shadows", int(shadows)
+    myShader.setFloat "far_plane", farPlane
 
     # Bind textures and render
     glActiveTexture GL_TEXTURE0
     glBindTexture GL_TEXTURE_2D, woodTexture
     glActiveTexture GL_TEXTURE1
-    glBindTexture GL_TEXTURE_2D, depthMap
+    glBindTexture GL_TEXTURE_CUBE_MAP, depthCubemap
     renderScene myShader
-
-    # Render depth map to quad for visual debugging
-    debugDepthQuad.use
-    debugDepthQuad.setFloat "near_plane", nearPlane
-    debugDepthQuad.setFloat "far_plane", farPlane
-    glActiveTexture GL_TEXTURE0
-    glBindTexture GL_TEXTURE_2D, depthMap
-    #renderQuad()
 
     w.swapBuffers
     glfwPollEvents()
