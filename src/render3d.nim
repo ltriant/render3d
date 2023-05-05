@@ -245,13 +245,13 @@ when isMainModule:
   var
     # Load shaders
     myShader = newShader(
-      "shader-pointShadows.vs",
-      "shader-pointShadows.fs"
+      "shaders/shader-pointShadows.vs",
+      "shaders/shader-pointShadows.fs"
     )
     simpleDepthShader = newShader(
-      "shader-pointShadowsDepth.vs",
-      "shader-pointShadowsDepth.fs",
-      some("shader-pointShadowsDepth.gs")
+      "shaders/shader-pointShadowsDepth.vs",
+      "shaders/shader-pointShadowsDepth.fs",
+      some("shaders/shader-pointShadowsDepth.gs")
     )
 
     # Load textures
